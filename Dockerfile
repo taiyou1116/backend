@@ -6,8 +6,6 @@ COPY src/go.mod ./
 COPY src/go.sum ./
 RUN go mod download
 
-COPY . .
+COPY src/main.go ./
 
-EXPOSE 8080
-
-CMD ["go", "run", "main.go"]
+EXPOSE 8000
