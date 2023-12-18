@@ -2,10 +2,12 @@ FROM golang:1.18
 
 WORKDIR /app
 
-COPY src/go.mod ./
-COPY src/go.sum ./
+COPY go.mod ./
+COPY go.sum ./
 RUN go mod download
 
-COPY src/main.go ./
+COPY main.go ./
 
 EXPOSE 8000
+
+CMD ["go", "run", "main.go"]
