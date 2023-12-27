@@ -48,7 +48,12 @@ func main() {
 	// ここでusersテーブルからデータを取得するルートを追加
 	e.GET("/posts", func(c *gin.Context) {
 
-		rows, err := db.Query("SELECT id, user_id, title, body FROM posts")
+		// rows, err := db.Query("SELECT id, user_id, title, body FROM posts")
+		rows, err := db.Query(`
+        	SELECT posts.id, posts.user_id, posts.title, posts.body, users.username 
+        	FROM posts 
+        	INNER JOIN users ON posts.user_id = users.id
+    	`)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -58,12 +63,12 @@ func main() {
 
 		for rows.Next() {
 			var id, user_id int
-			var title, body string
-			err = rows.Scan(&id, &user_id, &title, &body)
+			var title, body, username string
+			err = rows.Scan(&id, &user_id, &title, &body, &username)
 			if err != nil {
 				log.Fatal(err)
 			}
-			posts = append(posts, gin.H{"id": id, "user_id": user_id, "title": title, "body": body})
+			posts = append(posts, gin.H{"id": id, "user_id": user_id, "title": title, "body": body, "username": username})
 		}
 
 		c.JSON(200, gin.H{"posts": posts})
