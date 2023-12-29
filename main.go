@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -38,6 +39,7 @@ func main() {
 	e := gin.Default()
 	e.Use(cors.Default())
 
+	// テスト
 	e.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "success",
@@ -45,10 +47,8 @@ func main() {
 		})
 	})
 
-	// ここでusersテーブルからデータを取得するルートを追加
+	// 全postsを取得 (+username)
 	e.GET("/posts", func(c *gin.Context) {
-
-		// rows, err := db.Query("SELECT id, user_id, title, body FROM posts")
 		rows, err := db.Query(`
         	SELECT posts.id, posts.user_id, posts.title, posts.body, users.username 
         	FROM posts 
@@ -74,5 +74,29 @@ func main() {
 		c.JSON(200, gin.H{"posts": posts})
 	})
 
+	// postをDBに追加
+	e.POST("api/submit-post", func(c *gin.Context) {
+		var payload PostPayload
+
+		if err := c.BindJSON(&payload); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		_, err := db.Exec("INSERT INTO posts (title, content, user_id) VALUES ($1, $2, $3)", payload.Title, payload.Content, payload.UserId)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "created new post!"})
+	})
+
 	e.Run(":8000")
+}
+
+// マッピングするための構造体
+type PostPayload struct {
+	Title   string `json:"title"`
+	Content string `json:"content"`
+	UserId  int    `json:"user_id"`
 }
