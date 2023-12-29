@@ -83,7 +83,7 @@ func main() {
 			return
 		}
 
-		_, err := db.Exec("INSERT INTO posts (title, content, user_id) VALUES ($1, $2, $3)", payload.Title, payload.Content, payload.UserId)
+		_, err := db.Exec("INSERT INTO posts (title, body, user_id) VALUES ($1, $2, $3)", payload.Title, payload.Content, payload.UserId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
