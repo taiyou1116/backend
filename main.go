@@ -48,7 +48,7 @@ func main() {
 	})
 
 	// 全postsを取得 (+username)
-	e.GET("/posts", func(c *gin.Context) {
+	e.GET("api/posts", func(c *gin.Context) {
 		rows, err := db.Query(`
         	SELECT posts.id, posts.user_id, posts.title, posts.body, users.username 
         	FROM posts 
