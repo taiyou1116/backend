@@ -1,3 +1,5 @@
+// APIを提供
+
 package main
 
 import (
@@ -38,14 +40,6 @@ func main() {
 
 	e := gin.Default()
 	e.Use(cors.Default())
-
-	// テスト
-	e.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status":  "success",
-			"message": "Hello World",
-		})
-	})
 
 	// 全postsを取得 (+username)
 	e.GET("api/posts", func(c *gin.Context) {
