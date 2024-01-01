@@ -102,7 +102,7 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 
-		_, err = db.Exec("INSERT INTO users (username, password) VALUE ($1, $2)", payload.UserName, hashedPassword)
+		_, err = db.Exec("INSERT INTO users (username, password) VALUES ($1, $2)", payload.UserName, string(hashedPassword))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -111,6 +111,9 @@ func main() {
 	})
 	e.Run(":8000")
 }
+
+// StatusBadRequest          ... クライアントからのリクエストに問題あり
+// StatusInternalServerError ... リクエストに問題なし、サーバーの処理で問題あり
 
 // POSTをマッピングするための構造体
 type PostPayload struct {
