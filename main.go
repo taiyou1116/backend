@@ -90,9 +90,22 @@ func main() {
 
 	// ユーザー登録
 	e.POST("api/register", func(c *gin.Context) {
+		// クライアントからの値をバインド
 		var payload UserPayload
 		if err := c.BindJSON(&payload); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		var userCount byte
+		// ユーザーがすでに存在しているか確認
+		err := db.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", payload.UserName).Scan(&userCount)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if userCount > 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "そのユーザー名はすでに使用されています"})
 			return
 		}
 
@@ -100,8 +113,10 @@ func main() {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 
+		// ユーザーをDBに追加
 		_, err = db.Exec("INSERT INTO users (username, password) VALUES ($1, $2)", payload.UserName, string(hashedPassword))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -112,6 +127,7 @@ func main() {
 
 	// ログイン処理
 	e.POST("api/login", func(c *gin.Context) {
+		// クライアントからの値をバインド
 		var payload UserPayload
 		if err := c.BindJSON(&payload); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
