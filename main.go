@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -153,6 +155,18 @@ func main() {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "ログイン成功"})
+
+		// JWTトークンの生成
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"username": payload.UserName,
+			"exp":      time.Now().Add(time.Hour * 24).Unix(),
+		})
+		tokenString, err := token.SignedString([]byte("your_secret_key"))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "トークンの生成に失敗しました"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"token": tokenString})
 	})
 
 	e.Run(":8000")
