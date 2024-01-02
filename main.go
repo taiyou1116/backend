@@ -89,7 +89,7 @@ func main() {
 	})
 
 	// ユーザー登録
-	e.POST("api/create-user", func(c *gin.Context) {
+	e.POST("api/register", func(c *gin.Context) {
 		var payload UserPayload
 		if err := c.BindJSON(&payload); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -109,6 +109,36 @@ func main() {
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "created new User!"})
 	})
+
+	// ログイン処理
+	e.POST("api/login", func(c *gin.Context) {
+		var payload UserPayload
+		if err := c.BindJSON(&payload); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+
+		var storedHash string
+
+		// passwordを入手してScan()でstoredHashに格納する
+		err := db.QueryRow("SELECT password FROM users WHERE username = $1", payload.UserName).Scan(&storedHash)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "ユーザーが存在しません"})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			}
+			return
+		}
+
+		// passwordの確認
+		err = bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(payload.Password))
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "パスワードが違います"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "ログイン成功"})
+	})
+
 	e.Run(":8000")
 }
 
