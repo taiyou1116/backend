@@ -154,7 +154,7 @@ func main() {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "パスワードが違います"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"message": "ログイン成功"})
+		// c.JSON(http.StatusOK, gin.H{"message": "ログイン成功"})
 
 		// JWTトークンの生成
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -166,7 +166,9 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "トークンの生成に失敗しました"})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"token": tokenString})
+		c.JSON(http.StatusOK, gin.H{
+			"message": "ログイン成功",
+			"token":   tokenString})
 	})
 
 	e.Run(":8000")
