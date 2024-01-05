@@ -167,8 +167,9 @@ func main() {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
-			"message": "ログイン成功",
-			"token":   tokenString})
+			"message":  "ログイン成功",
+			"username": payload.UserName,
+			"token":    tokenString})
 	})
 
 	e.Run(":8000")
