@@ -172,6 +172,32 @@ func main() {
 			"token":    tokenString})
 	})
 
+	e.POST("api/verify-token", func(c *gin.Context) {
+		tokenString := c.GetHeader("Authorization")
+
+		// トークン検証
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// ここで秘密鍵を返す
+			return []byte("your_secret_key"), nil
+		})
+
+		if err != nil || !token.Valid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "無効なトークンです"})
+			return
+		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "クレームを解説できません"})
+			return
+		}
+
+		username := claims["username"].(string)
+
+		// あとでレスポンス内容を変更する(DBから取得)
+		c.JSON(http.StatusOK, gin.H{"レスポンス": username})
+	})
+
 	e.Run(":8000")
 }
 
