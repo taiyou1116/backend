@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -41,7 +42,19 @@ func main() {
 
 	e := gin.Default()
 	// ミドルウェア
-	e.Use(cors.Default())
+	e.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"}, // フロントエンドのURL
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		AllowOriginFunc: func(origin string) bool {
+			return origin == "http://localhost:3000"
+		},
+		MaxAge: 12 * time.Hour,
+	}))
+
+	// e.Use(cors.Default())
 
 	// 全postsを取得 (+username)
 	// 10個ずつ取得とかに変更するかも
@@ -175,13 +188,19 @@ func main() {
 	e.POST("api/verify-token", func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
 
+		// 'Bearer 'プレフィックスを取り除く
+		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+
 		// トークン検証
+		// tokenString -> 無名関数の引数のtokenに渡される
+		// returnの結果がtokenに入る
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			// ここで秘密鍵を返す
 			return []byte("your_secret_key"), nil
 		})
 
 		if err != nil || !token.Valid {
+			log.Printf("トークン解析エラー: %v", err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "無効なトークンです"})
 			return
 		}
@@ -195,7 +214,7 @@ func main() {
 		username := claims["username"].(string)
 
 		// あとでレスポンス内容を変更する(DBから取得)
-		c.JSON(http.StatusOK, gin.H{"レスポンス": username})
+		c.JSON(http.StatusOK, gin.H{"response": username})
 	})
 
 	e.Run(":8000")
