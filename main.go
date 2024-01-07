@@ -185,6 +185,7 @@ func main() {
 			"token":    tokenString})
 	})
 
+	// ログイン時のJWT検証(トークンがあればログインのスキップ)
 	e.POST("api/verify-token", func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
 
@@ -215,6 +216,23 @@ func main() {
 
 		// あとでレスポンス内容を変更する(DBから取得)
 		c.JSON(http.StatusOK, gin.H{"response": username})
+	})
+
+	// イメージの保存
+	e.POST("upload-image", func(c *gin.Context) {
+		file, err := c.FormFile("file")
+		if err != nil {
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+
+		// サーバーローカルに保存 (あとでpathの変更)
+		err = c.SaveUploadedFile(file, "path"+file.Filename)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
 	})
 
 	e.Run(":8000")
