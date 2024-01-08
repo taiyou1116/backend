@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -219,20 +220,23 @@ func main() {
 	})
 
 	// イメージの保存
-	e.POST("upload-image", func(c *gin.Context) {
+	e.POST("api/upload-image", func(c *gin.Context) {
 		file, err := c.FormFile("file")
 		if err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
+			c.JSON(http.StatusBadRequest, err)
 			return
 		}
+
+		filePath := filepath.Join("/app/static", file.Filename)
 
 		// サーバーローカルに保存 (あとでpathの変更)
-		err = c.SaveUploadedFile(file, "path"+file.Filename)
+		err = c.SaveUploadedFile(file, filePath)
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
+			c.JSON(http.StatusInternalServerError, err)
 			return
 		}
 
+		c.JSON(http.StatusOK, gin.H{"message": "image updated!"})
 	})
 
 	e.Run(":8000")
