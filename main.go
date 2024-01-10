@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
-	"strings"
+	"sample/utils"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -168,7 +168,6 @@ func main() {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "パスワードが違います"})
 			return
 		}
-		// c.JSON(http.StatusOK, gin.H{"message": "ログイン成功"})
 
 		// JWTトークンの生成
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -188,39 +187,20 @@ func main() {
 
 	// ログイン時のJWT検証(トークンがあればログインのスキップ)
 	e.POST("api/verify-token", func(c *gin.Context) {
-		tokenString := c.GetHeader("Authorization")
-
-		// 'Bearer 'プレフィックスを取り除く
-		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
-
-		// トークン検証
-		// tokenString -> 無名関数の引数のtokenに渡される
-		// returnの結果がtokenに入る
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			// ここで秘密鍵を返す
-			return []byte("your_secret_key"), nil
-		})
-
-		if err != nil || !token.Valid {
-			log.Printf("トークン解析エラー: %v", err)
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "無効なトークンです"})
-			return
-		}
-
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "クレームを解説できません"})
-			return
-		}
-
-		username := claims["username"].(string)
-
-		// あとでレスポンス内容を変更する(DBから取得)
-		c.JSON(http.StatusOK, gin.H{"response": username})
+		utils.VerifyToken(c)
 	})
 
 	// イメージの保存
 	e.POST("api/upload-image", func(c *gin.Context) {
+
+		// ログイン中のユーザーを特定
+		username, err := utils.VerifyToken(c)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+
 		file, err := c.FormFile("file")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, err)
@@ -229,14 +209,20 @@ func main() {
 
 		filePath := filepath.Join("/app/static", file.Filename)
 
-		// サーバーローカルに保存 (あとでpathの変更)
+		// ユーザーのimagepathに写真の実体へのパスを保存
+		_, err = db.Exec("UPDATE users SET imagepath = $1 WHERE username = $2", filePath, username)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+
 		err = c.SaveUploadedFile(file, filePath)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err)
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "image updated!"})
+		c.JSON(http.StatusOK, gin.H{"filepath": filePath})
 	})
 
 	e.Run(":8000")
