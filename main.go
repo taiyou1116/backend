@@ -228,7 +228,7 @@ func main() {
 			return
 		}
 
-		filePath := filepath.Join("/app/static", file.Filename)
+		filePath := filepath.Join("/static", file.Filename)
 
 		// ユーザーのimagepathに写真の実体へのパスを保存
 		_, err = db.Exec("UPDATE users SET imagepath = $1 WHERE username = $2", filePath, username)
