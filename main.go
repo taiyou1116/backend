@@ -55,9 +55,8 @@ func main() {
 		MaxAge: 12 * time.Hour,
 	}))
 
+	// ローカルの/app/staticをサーバーでlocalhost/staticで取得できるように
 	e.Static("/static", "/app/static")
-
-	// e.Use(cors.Default())
 
 	// 全postsを取得 (+username)
 	// 10個ずつ取得とかに変更するかも
