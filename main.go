@@ -55,6 +55,8 @@ func main() {
 		MaxAge: 12 * time.Hour,
 	}))
 
+	e.Static("/static", "/app/static")
+
 	// e.Use(cors.Default())
 
 	// 全postsを取得 (+username)
@@ -187,7 +189,27 @@ func main() {
 
 	// ログイン時のJWT検証(トークンがあればログインのスキップ)
 	e.POST("api/verify-token", func(c *gin.Context) {
-		utils.VerifyToken(c)
+
+		// JWTによるログイン時にはusernameでDBからimageを取得する必要がある
+		username, err := utils.VerifyToken(c)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+
+		var imagepath string
+
+		err = db.QueryRow("SELECT imagepath FROM users WHERE username = $1", username).Scan(&imagepath)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// username, imageURLをクライアントに返す
+		c.JSON(http.StatusOK, gin.H{
+			"username": username,
+			"imageURL": "http://localhost:8000" + imagepath,
+		})
 	})
 
 	// イメージの保存
