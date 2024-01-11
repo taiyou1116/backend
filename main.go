@@ -189,11 +189,10 @@ func main() {
 
 	// ログイン時のJWT検証(トークンがあればログインのスキップ)
 	e.POST("api/verify-token", func(c *gin.Context) {
-
 		// JWTによるログイン時にはusernameでDBからimageを取得する必要がある
 		username, err := utils.VerifyToken(c)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 

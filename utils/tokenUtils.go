@@ -38,8 +38,5 @@ func VerifyToken(c *gin.Context) (string, error) {
 
 	username := claims["username"].(string)
 
-	// あとでレスポンス内容を変更する(DBから取得)
-	c.JSON(http.StatusOK, gin.H{"response": username})
-
 	return username, nil
 }
