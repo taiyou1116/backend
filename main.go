@@ -97,7 +97,17 @@ func main() {
 			return
 		}
 
-		_, err := db.Exec("INSERT INTO posts (title, body, user_id) VALUES ($1, $2, $3)", payload.Title, payload.Content, payload.UserId)
+		// 送られてきたusernameからidを取得, user_idにidを格納すればOK
+		username, err := utils.VerifyToken(c)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		var userId int
+		db.QueryRow("SELECT id FROM users WHERE username = $1", username).Scan(&userId)
+
+		_, err = db.Exec("INSERT INTO posts (title, body, user_id) VALUES ($1, $2, $3)", payload.Title, payload.Content, userId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -255,7 +265,6 @@ func main() {
 type PostPayload struct {
 	Title   string `json:"title"`
 	Content string `json:"content"`
-	UserId  int    `json:"user_id"`
 }
 
 type UserPayload struct {
